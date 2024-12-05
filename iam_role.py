@@ -50,9 +50,14 @@ def is_aws_managed_policy(policy_arn):
     """Check if the policy is an AWS managed policy based on the ARN format"""
     return policy_arn.startswith("arn:aws:iam::aws:policy/")
 
-def is_valid_kms_key(resource):
-    """Check if the resource ARN matches the KMS key ARN format and belongs to the target account"""
-    if resource.startswith(f"arn:aws:kms:") and f"arn:aws:kms:*:{TARGET_ACCOUNT_ID}:key/" in resource:
+def is_valid_kms_resource(resource):
+    """Check if the resource is a valid KMS key or alias ARN and belongs to the target account"""
+    # Check for key ARNs
+    if (
+        resource.startswith(f"arn:aws:kms:") and
+        f":{TARGET_ACCOUNT_ID}:" in resource and
+        ("/key/" in resource or "/alias/" in resource)
+    ):
         return True
     return False
 
@@ -72,13 +77,14 @@ def extract_kms_resources(statements, policy_name, role_name):
             if isinstance(resources, str):
                 resources = [resources]
             for resource in resources:
-                # Validate if the resource matches KMS key ARN format and account ID
-                if is_valid_kms_key(resource):
-                    analysis_results.append({
-                        "RoleName": role_name,
-                        "PolicyName": policy_name,
-                        "KMSResourceARN": resource
-                    })
+                # Exclude wildcard resources and validate KMS ARNs
+                if resource == "*" or not is_valid_kms_resource(resource):
+                    continue
+                analysis_results.append({
+                    "RoleName": role_name,
+                    "PolicyName": policy_name,
+                    "KMSResourceARN": resource
+                })
 
 def list_all_roles(limit=200):
     iam = boto3.client('iam')
@@ -104,7 +110,7 @@ def main():
         time.sleep(0.1)  # Adjust based on API limits
 
     # Save results to CSV
-    output_csv = "role_kms_resources_filtered.csv"
+    output_csv = "role_kms_resources_with_aliases.csv"
     save_to_csv(output_csv)
 
 def save_to_csv(file_name):
