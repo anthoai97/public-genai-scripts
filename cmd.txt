@@ -1,0 +1,3 @@
+aws logs filter-log-events \
+    --log-group-name /aws/cloudtrail \
+    --filter-pattern '{ $.eventSource = "kms.amazonaws.com" && $.requestParameters.keyId = "KEY_ID" }'
