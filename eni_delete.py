@@ -1,0 +1,1 @@
+aws ec2 delete-network-interface --network-interface-id eni-0abc123def456gh78
