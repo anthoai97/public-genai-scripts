@@ -1,5 +1,12 @@
 import boto3
 import json
+import datetime
+
+def json_serializer(obj):
+    """Convert datetime objects to string format for JSON serialization."""
+    if isinstance(obj, datetime.datetime):
+        return obj.isoformat()
+    raise TypeError("Type not serializable")
 
 def get_rds_instance_details(instance_id):
     client = boto3.client('rds')
@@ -42,7 +49,7 @@ def export_rds_settings(instance_id, output_file='rds_settings.json'):
     settings = get_rds_instance_details(instance_id)
     
     with open(output_file, 'w') as f:
-        json.dump(settings, f, indent=4)
+        json.dump(settings, f, indent=4, default=json_serializer)
     
     print(f"RDS settings exported to {output_file}")
 
