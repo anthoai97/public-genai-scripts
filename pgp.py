@@ -1,5 +1,5 @@
-from pgpy import PGPKey
 import sys
+from pgpy import PGPKey
 
 def check_encryption_capability(key_file):
     try:
@@ -7,15 +7,16 @@ def check_encryption_capability(key_file):
         with open(key_file, "r") as f:
             key_data = f.read()
         
-        key = PGPKey.from_blob(key_data)[0]
+        key, _ = PGPKey.from_blob(key_data)
 
-        # Check if the primary key or any subkey supports encryption
-        if key.can_encrypt:
-            print("✅ Encryption key found!")
+        # Check primary key usage
+        if "Encrypt" in key.key_usage:
+            print("✅ Primary key supports encryption!")
             return True
 
+        # Check subkeys
         for subkey in key.subkeys.values():
-            if subkey.can_encrypt:
+            if "Encrypt" in subkey.key_usage:
                 print("✅ Encryption subkey found!")
                 return True
 
