@@ -1,6 +1,13 @@
 import sys
 from pgpy import PGPKey
 
+# Algorithms that support encryption
+ENCRYPTION_ALGORITHMS = {
+    1, 2, 3,    # RSA (Encrypt/Sign, Encrypt-Only, Sign-Only)
+    16, 20,     # ElGamal (Encrypt-Only)
+    18          # ECDH (Elliptic Curve Diffie-Hellman)
+}
+
 def check_encryption_capability(key_file):
     try:
         # Load the public key
@@ -9,14 +16,14 @@ def check_encryption_capability(key_file):
         
         key, _ = PGPKey.from_blob(key_data)
 
-        # Check primary key usage
-        if "Encrypt" in key.key_usage:
+        # Check primary key algorithm
+        if key.key_algorithm in ENCRYPTION_ALGORITHMS:
             print("✅ Primary key supports encryption!")
             return True
 
-        # Check subkeys
+        # Check subkeys for encryption support
         for subkey in key.subkeys.values():
-            if "Encrypt" in subkey.key_usage:
+            if subkey.key_algorithm in ENCRYPTION_ALGORITHMS:
                 print("✅ Encryption subkey found!")
                 return True
 
