@@ -1,0 +1,10 @@
+SELECT COUNT(*) AS failed_jobs_count
+FROM cron.job j
+JOIN LATERAL (
+  SELECT status
+  FROM cron.job_run_details r
+  WHERE r.jobid = j.jobid
+  ORDER BY end_time DESC
+  LIMIT 1
+) r ON true
+WHERE r.status = 'failed';
