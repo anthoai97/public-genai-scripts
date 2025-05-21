@@ -1,0 +1,32 @@
+import random
+import string
+
+# Updated forbidden characters
+FORBIDDEN_CHARS = set('$"\@";:{}()!*>~!^#,&% & @ +;')
+
+def generate_password():
+    # Define allowed character sets (excluding forbidden characters)
+    digits = [c for c in string.digits if c not in FORBIDDEN_CHARS]
+    lowercase = [c for c in string.ascii_lowercase if c not in FORBIDDEN_CHARS]
+    uppercase = [c for c in string.ascii_uppercase if c not in FORBIDDEN_CHARS]
+    special_chars = [c for c in string.punctuation if c not in FORBIDDEN_CHARS]
+
+    # Combine all allowed characters for filler
+    allowed_chars = list(set(digits + lowercase + uppercase + special_chars))
+
+    # Build the password with the minimum required components
+    password_chars = (
+        random.sample(digits, 2) +
+        random.sample(lowercase, 2) +
+        random.sample(uppercase, 2) +
+        random.sample(special_chars, 2)
+    )
+
+    # Add random characters to make it at least 12 characters long
+    remaining_length = 12 - len(password_chars)
+    password_chars += random.choices(allowed_chars, k=remaining_length)
+
+    # Shuffle the characters to mix their positions
+    random.shuffle(password_chars)
+
+    return ''.join(password_chars)
