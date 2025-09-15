@@ -1,0 +1,30 @@
+SELECT rolname, rolsuper, rolinherit, rolcreaterole, rolcreatedb, rolcanlogin, rolreplication, rolbypassrls
+FROM pg_roles
+WHERE rolname IN ('role_a', 'role_b');
+
+-- Members of role_a but not role_b
+SELECT r.rolname AS member
+FROM pg_auth_members m
+JOIN pg_roles r ON m.roleid = r.oid
+JOIN pg_roles g ON m.member = g.oid
+WHERE g.rolname = 'role_a'
+EXCEPT
+SELECT r.rolname AS member
+FROM pg_auth_members m
+JOIN pg_roles r ON m.roleid = r.oid
+JOIN pg_roles g ON m.member = g.oid
+WHERE g.rolname = 'role_b';
+
+-- Table privileges of role_a
+SELECT grantee, privilege_type, table_schema, table_name
+FROM information_schema.role_table_grants
+WHERE grantee = 'role_a';
+
+-- Diff: role_a but not role_b
+SELECT grantee, privilege_type, table_schema, table_name
+FROM information_schema.role_table_grants
+WHERE grantee = 'role_a'
+EXCEPT
+SELECT grantee, privilege_type, table_schema, table_name
+FROM information_schema.role_table_grants
+WHERE grantee = 'role_b';
