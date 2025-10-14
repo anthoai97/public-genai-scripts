@@ -1,32 +1,32 @@
-SELECT defaclobjtype, n.nspname AS schema, r.rolname AS grantor, d.defaclacl
-FROM pg_default_acl d
-JOIN pg_roles r ON r.oid = d.defaclrole
-LEFT JOIN pg_namespace n ON n.oid = d.defaclnamespace
-WHERE d.defaclacl::text LIKE '%role_a%';
+Check default privileges referencing role_a:
 
-SELECT r.rolname
-FROM pg_auth_members m
-JOIN pg_roles r ON m.roleid = r.oid
-WHERE m.member = (SELECT oid FROM pg_roles WHERE rolname = CURRENT_USER);
-
-SELECT grantee, privilege_type
-FROM information_schema.role_table_grants
-WHERE table_schema = 'public'
-  AND table_name = 'mytable'
-  AND grantee IN (CURRENT_USER, 'PUBLIC');
+SELECT *
+FROM pg_default_acl
+WHERE defaclrole = 'role_a'::regrole
+   OR defacluser = 'role_a'::regrole;
 
 
-SELECT r.usename AS grantor,
-       e.usename AS grantee,
-       nspname,
-       privilege_type,
-       is_grantable
-  FROM pg_namespace
-JOIN LATERAL (SELECT *
-                FROM aclexplode(nspacl) AS x) a
-          ON true
-        JOIN pg_user e
-          ON a.grantee = e.usesysid
-        JOIN pg_user r
-          ON a.grantor = r.usesysid 
-       WHERE e.usename = 'YOUR_USER';
+If present, remove them:
+
+ALTER DEFAULT PRIVILEGES FOR ROLE kyc_admin IN SCHEMA test3 REVOKE ALL ON TABLES FROM role_a;
+ALTER DEFAULT PRIVILEGES FOR ROLE kyc_admin IN SCHEMA test3 REVOKE ALL ON SEQUENCES FROM role_a;
+ALTER DEFAULT PRIVILEGES FOR ROLE kyc_admin IN SCHEMA test3 REVOKE ALL ON FUNCTIONS FROM role_a;
+
+
+Drop any ownership references:
+
+REASSIGN OWNED BY role_a TO kyc_admin;
+DROP OWNED BY role_a;
+
+
+Drop the role:
+
+DROP ROLE role_a;
+
+
+If step 2 fails, manually inspect using:
+
+\ddp  -- in psql, shows default privileges
+
+
+Confirm all entries mentioning role_a are cleared before dropping.
