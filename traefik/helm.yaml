@@ -1,0 +1,69 @@
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: traefik
+  namespace: traefik
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: traefik
+      version: "39.0.2"
+      sourceRef:
+        kind: HelmRepository
+        name: traefik
+        namespace: traefik
+  values:
+    deployment:
+      replicas: 2
+
+    service:
+      type: LoadBalancer
+
+    ports:
+      web:
+        port: 8000
+        expose:
+          default: true
+        exposedPort: 80
+        http:
+          redirections:
+            entryPoint:
+              to: websecure
+              scheme: https
+      websecure:
+        port: 8443
+        expose:
+          default: true
+        exposedPort: 443
+
+    providers:
+      kubernetesIngress:
+        enabled: false
+      kubernetesGateway:
+        enabled: true
+
+    gatewayClass:
+      enabled: true
+
+    gateway:
+      enabled: true
+      listeners:
+        web:
+          port: 8000
+          protocol: HTTP
+          namespacePolicy:
+            from: All
+        websecure:
+          port: 8443
+          protocol: HTTPS
+          certificateRefs:
+            - kind: Secret
+              group: ""
+              name: traefik-gateway-tls
+          namespacePolicy:
+            from: All
+
+    ingressRoute:
+      dashboard:
+        enabled: true
